@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIBE TRACKER AI ©</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script src="../static/js/script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body data-active-section="{{ active_section }}">
+    <div class="wrapper">
+        <!-- BARRA LATERAL -->
+        
+        <div id="sidebar">
+
+            <!-- NOMBRE DE LA WEB -->
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-square">V</div>
+                <span>Vibe Tracker AI</span>
+            </div>
+
+            <!-- LISTA DE APLICACIONES -->
+            <ul class="sidebar-nav">
+                <li class="sidebar-item">
+                    <div class="active-blue-bar"></div>
+                    <a href="#generar-imagenes" class="sidebar-link">
+                        <i class="ti ti-photo-scan"></i>
+                        <span>Generar imagenes con texto</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <div class="active-blue-bar"></div>
+                    <a href="#recomendacion-hastags" class="sidebar-link">
+                        <i class="ti ti-ad"></i>
+                        <span>Recomendacion de hastags</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <div class="active-blue-bar"></div>
+                    <a href="#analisis-comentarios" class="sidebar-link">
+                        <i class="ti ti-presentation-analytics"></i>
+                        <span>Analisis de comentarios</span>
+                    </a>
+                </li>
+            </ul>            
+        </div>
+        <!-- PANTALLA PRINCIPAL -->
+        <div class="back-main">
+            <!-- PANTALLA PRINCIPAL -->
+            <div class="back-main">
+                <div id="generar-imagenes" class="main">
+                    <div class="chat-display">
+                        {% if image_path %}
+                            <div class="chat-message">
+                                <p>{{ prompt }}</p> <!-- Muestra el mensaje del prompt -->
+                                <img src="{{ url_for('static', filename=image_path) }}" alt="Imagen Generada">
+                            </div>
+                        {% else %}
+                            <div class="chat-message-instagram">
+                                <div class='mensaje-espera'>
+                                    <p>Introduce un prompt para generar una imagen</p>
+                                    <p><i class="ti ti-arrow-down"></i></p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-container">
+                        <form class="form_send_prompt" action="/generar-imagenes" method="post">
+                            <input id="input-text" type="text" name="prompt" placeholder="Introduce un prompt para generar una imagen..." required autocomplete="off">
+                            <button id="input-button" type="submit"><i class="ti ti-corner-down-left"></i></button>
+                            <i class="ti ti-minus-vertical"></i>
+                            <input id="input-seed" type="number" name="seed" placeholder="Semilla (opcional)">
+                        </form>
+                    </div>
+                </div>
+
+
+                <div id="recomendacion-hastags" class="main">
+                    <div class="chat-display">
+                        {% if file_path %}
+                            <div class="form-container-image">
+                                <div class='image-div'>
+                                    <div class='image-show'>
+                                        <img src="{{ url_for('static', filename=file_path) }}" alt="Imagen subida">
+                                    </div>
+                                </div>
+                                <div id="object-detection-results">
+                                    {% if objects_detected %}
+                                        <h3>Objetos detectados:</h3>
+                                        <ul>
+                                            {% for obj in objects_detected %}
+                                                <li>{{ obj }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        <canvas id="pieChart"></canvas>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="div-recomendacion-main">
+                                <div class="div-recomendacion">
+                                    <div class="hashtag-title">
+                                        10 Hashtags recomendados para tu publicación de Instagram
+                                    </div>
+                                    {% if hashtags %}
+                                        <table class="hashtags-table">
+                                            {% for i in range(0, hashtags|length, 5) %}
+                                                <tr>
+                                                    {% for j in range(5) %}
+                                                        {% if i + j < hashtags|length %}
+                                                            <td>
+                                                                <div class="hashtag-content">
+                                                                    <p>{{ i + j + 1 }}.</p> 
+                                                                    <p>{{ hashtags[i + j] }}</p>
+                                                                </div>
+                                                            </td>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </tr>
+                                            {% endfor %}
+                                        </table>
+                                        <div class="hashtag-copy">
+                                            <div class="hashtag-copy-list" id="hashtagCopy">
+                                                {{ hashtags_copy }}
+                                            </div>
+                                            <i class="ti ti-minus-vertical"></i>
+                                            <button id="copyButton"><i class="ti ti-copy"></i></button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="chat-message-instagram">
+                                <div class='mensaje-espera'>
+                                    <p>Introduce una imagen para detectar objetos y recomendar hashtags</p>
+                                    <p><i class="ti ti-arrow-down"></i></p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class='image-form form-container'>
+                            <form class="form_upload_image form_send_prompt" action="/recomendacion-hastags" method="post" enctype="multipart/form-data">
+                                <input id="input-image" type="file" name="image" accept="image/*" required>
+                                <button id="input-button" type="submit"><i class="ti ti-corner-down-left"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="analisis-comentarios" class="main" style="display:none;">
+                    <div class="chat-display">
+                        {% if instagram_info %}
+                            <div class="chat-message-instagram">
+                                <div class="instagram-results">
+                                    <div class="instagram-post">
+                                        <blockquote class="instagram-media" data-instgrm-permalink="{{ instagram_url }}" data-instgrm-version="14"></blockquote>
+                                        <script async src="//www.instagram.com/embed.js"></script>
+                                    </div>
+                                    
+                                    <div class="sentiment-analysis">
+                                        <table class="table-instagram table-results">
+                                            <thead>
+                                                <tr>
+                                                    <th>Sentimiento más frecuente</th>
+                                                    <th>Positivos</th>
+                                                    <th>Neutros</th>
+                                                    <th>Negativos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td class="{% if most_frequent == 'Positivo' %}positive{% elif most_frequent == 'Negativo' %}negative{% else %}neutral{% endif %}">
+                                                        <div class="sentiment-info">
+                                                            {{ most_frequent }}
+                                                        </div>
+                                                        <div class="sentiment-icon">
+                                                            {% if most_frequent == 'Positivo' %}
+                                                                <i class="ti ti-mood-happy"></i>
+                                                            {% elif most_frequent == 'Negativo' %}
+                                                                <i class="ti ti-mood-sad"></i>
+                                                            {% else %}
+                                                                <i class="ti ti-mood-neutral"></i>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>                                                                                                     
+                                                    <td>{{ percentages['Positivo']|round(2) }}%</td>
+                                                    <td>{{ percentages['Neutral']|round(2) }}%</td>
+                                                    <td>{{ percentages['Negativo']|round(2) }}%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <table class="table-instagram">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Comentario</th>
+                                            <th>Sentimiento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for info in instagram_info %}
+                                        <tr>
+                                            <td>{{ info['username'] }}</td>
+                                            <td>{{ info['comment'] }}</td>
+                                            <td> {{ info['sentiment'] }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="chat-message-instagram">
+                                <div class='mensaje-espera'>
+                                    <p>Introduce una url de un post de Instagram</p>
+                                    <p><i class="ti ti-arrow-down"></i></p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>                    
+                        
+                    <div class="form-container">
+                        <form class="form_send_prompt" action="/analisis-comentarios" method="post">
+                            <input id="input-text" type="text" name="instagram_url" placeholder="Introduce una url de instagram..." required autocomplete="off">
+                            <button id="input-button" type="submit"><i class="ti ti-corner-down-left"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
